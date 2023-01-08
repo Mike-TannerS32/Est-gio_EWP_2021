@@ -1,0 +1,292 @@
+Ewp resumo:
+Capitulo 1:
+Documentação dividida em repositórios Git.
+
+Repositorios API separados – dar a parceiros a opção de implementar um subset de todas as features implementadas. 
+
+Vantagens: - se um parceiro não implementar uma  API, ele sabe que pode ignorar todas as mudanças no repositoria dessa API.
+	
+	- se o parceiro já implementou a API y e quer fazer upgrade à implementação para incluir modificações na nova release, pode simplesmente rever um diff entre tags especificas.
+
+	- permite-nos usar versionamento semântico separado por cada API. facilita a deteção de mudanças incompatíveis que podem quebrar as implementações.
+
+
+Uso do Github
+
+Issue tracker: prós - Os problemas do projeto mantêm-se junto do código do projeto
+	               - A janela dos problemas está sempre presente
+	       contras - os numeros issue não sao unicos dentro do projeto.
+
+Regras para design e versionamento de APIs:
+	Versionamento semantico: 
+		Documentos recebem os numeros das suas versões depois de serem oficialmente aprovados
+		Versionamento semantico permite developers .
+
+Chpt 2
+
+Ambiente de desenvolvimento:
+- Mantem-se uma instância alternativa do serviço de registry para propósitos de desenvolvimento.
+ Usa a mesma API de registo que o serviço regular de registo, mas descreve uma rede de desenvolvedor EWP:
+  - EWP Developer Network é separada da Rede principal EWP.
+  - Contém URLs de estações de trabalho de desenvolvedores individuais, que podem ficar offline a qualquer altura.
+  - Pode conter implementações alpha de rascunhos instáveis de APIs
+  - Pode conter referências para HEIs não existentes . Os developers são encorajados a criar  HEIs virtuais para testar as suas implementações cliente vs as implementações no servidor.
+  - Fora isso, usa exatamente os mesmos protocolos, segurança e permissões que a rede EWP em si. Ou seja, para efetuar o registo basta usar as guidelines da documentação EWP oficial.
+Para juntar à EWP developer network é necessário contactar os admnistradores da dev-registry.
+
+Hosts EWP
+- HEI - Higher Education Institution
+
+- Um unico host de EWP descreve um conjunto de HEIs a par com um conjunto de APIs implementadas. 
+
+ Em alguns países so existe um host EWP por país. Noutros todas as HEIs estão incluídas no mesmo host.
+
+ APIs - EWP também as implementa. Hosts EWP não são necessários para implementar todas os recursos da rede EWP. Os hosts podem expor APIs que não estão relacionadas com EWP.
+
+ Serviço Registry - unica parte centralizada da arquitetura EWP. Dá acesso a todos os hosts EWP à
+lista de outros hosts EWP, e para listar APIs implementadas por estes hosts, com os URLs onde as APIs estão implementadas.
+
+   O update é feito automaticamente. Lê periodicamente toda a imformação que todos os hosts EWP disponibilizam nos Discovery Manifest files e estas mudanças refletem-se instantaneamente nas respostas do serviço registry.
+   Uma vantagem deste update automático é que os parceiros não precisam de contactar o registry mainteiner quando quiserem alterar algumas das entradas na Registry. A maioria das alterações na registry podem ser efetuadas fazendo update do manifesto no servidor do parceiro.
+
+Aceder à Registry:
+
+- HEI B chama o servico da registry EWP. Esse serviço mantém um registo de todas as HEIs e as respetivas APIs. Dada a resposta da Registry, HEI B é capaz de determinar qual o URL que precisa  de chamar para receber os dados.
+
+Como os HEis são cobertos pelos hosts EWP:
+   
+   Pedidos não anonimos na rede EWP são feitos com uso de credenciais de cliente.
+   Cada conjunto de credenciais está ligado com um grupo de HEIs:
+     - Quando o Host 2 recebe o pedido como na imagem acima,sabe que veio do Host 1, não do HEI B em particular.
+     - Se o conjunto de dados pedido for visível apenas para o HEI B, então a API pedida precisará de um parâmetro adicional em cada pedido feito a esta API.
+     - Se os dados que HEI B está a pedir estão relacionados apenas com HEI D, e o host não for capaz de deduzir este facto de entre outros parametros, então a API vai precisar de outro parâmetro para ajudar o Host a identificar o HEI do qual se vão extrair os dados.
+
+ Recomendações ou requerimentos
+ - Error handling - regras : - se o serviço está temporariamente em baixo por alguma razão, então os servidores têm de responder com o HTTP 5xx status e a resposta pode tambem conter conteudo XML. 	
+		- Se o cliente não tem acesso ao recurso os servidores devem responder com HTTP 4xx status e a resposta deve conter um XML com o root element <error-response>.
+		- Se o cliente usou um método HTTP inapropriadom os servidores devem responder com HTTP 4xx e a resposta deve conter um conteudo XML com elemento root <error-response> :
+			- Se houver razão para suspeitar que os parâmetros inválidos foram causados pelo utilizador e não pelo developer, então o servidor deve também incluir o elemento <user-message> no <error-response>. Assim o client vais poder informar o seu utilizador daquilo que este fez de errado.
+
+Identifiers( chaves substitutas vs chaves naturais)
+
+- A maioria dos schemas requerem parceiros para providenciar ambas as chaves substitutas e chaves naturais para as suas entidades. chaves substitutas = "IDs" , chaves naturais = "códigos":
+	-ambas as chaves são únicas(case sensitive)
+	-Identificadores são geralmente escondidas dos utilizadores finais.Códigos não são:
+		- Se um programa de computador quiser encontrar uma entidadem terá de 		usar ID.
+		- Se um utilizador quiser encontrar uma entidade, ele irá usar o código.
+	-  A maioria das APIs requer servidores implementadores para deixar acontecer correspondência de entidades.
+
+Se o banco de dados do parceiro armazenar apenas chaves substitutas, ele PODE simplesmente fornecer sua chave substituta no código. Nesse caso, é recomendável que essas chaves substitutas sejam curtas (por exemplo, inteiros em vez de UUIDs).
+
+    Se o banco de dados do parceiro armazenar apenas chaves naturais, ele será OBRIGADO a adicionar uma nova coluna para a chave substituta.
+
+    A única isenção deste requisito é a seguinte situação:
+
+        O parceiro pode garantir com 100% de certeza que suas chaves naturais nunca mudarão. Isso significa que seus clientes (as IES) nunca terão permissão para reescrever essas chaves. (Na maioria dos casos, você não será capaz de garantir essas coisas.)
+
+        Todos os valores da chave natural correspondem às restrições que colocamos na surrogate key (veja abaixo).
+
+Além disso, precisamos colocar algumas limitações nos próprios valores dos identificadores (chaves substitutas):
+
+    Os identificadores são EXIGIDOS para terem o comprimento entre 1 e 64 caracteres.
+    Os identificadores devem consistir em caracteres imprimíveis (espaço não incluído) no bloco Unicode latino básico (U + 0021..U + 007E).
+    É RECOMENDADO evitar o uso de caracteres de pontuação e símbolo.
+
+Isso permite que os implementadores armazenem facilmente identificadores remotos em um varchar (64). Observe que essas limitações são apenas para identificadores, não para os códigos! Os códigos PODEM conter qualquer intervalo de caracteres Unicode e o EWP atualmente não coloca nenhum limite de comprimento para eles.
+
+Há mais uma recomendação a considerar:
+
+    É RECOMENDADO tornar todos os seus identificadores (chaves substitutas) universalmente exclusivos. Considere as vantagens dessa estratégia quando, por exemplo, duas IES EWP decidem se fundir (e essas coisas acontecem!). UUIDs (em sua forma canônica) são provavelmente o formato mais amplamente adotado para identificadores universalmente exclusivos.
+
+    Obviamente, se você decidir não seguir esta recomendação, todos os seus identificadores ainda DEVEM identificar exclusivamente suas entidades dentro de cada IES que você cobre.
+
+Integridade referencial
+
+A maioria dos servidores EWP API é necessária para manter a integridade referencial.
+
+Alguns parceiros podem querer não expor todas as suas entidades aos membros do EWP. Eles podem querer expor apenas um subconjunto selecionado deles (por exemplo, apenas os cursos realizados em inglês ou apenas as mobilidades com menos de um ano, etc.).
+
+Você, como desenvolvedor de servidor, tem permissão para ocultar algumas de suas entidades de alguns (ou de todos) os outros parceiros, mas se o fizer, DEVE ocultá-las consistentemente, para que a integridade referencial não seja quebrada. Se você não fizer isso, seus clientes obterão erros HTTP 400 não aprendidos (e eles podem tentar procurar a fonte desse bug em seus próprios aplicativos, enquanto o bug estará realmente no lado do servidor).
+
+Por exemplo, se você decidir que um curso los_id = X não deve ser acessível através da API Courses, você NÃO DEVE retornar uma referência a <los-id> X </los-id> em nenhuma das outras APIs também. (Essa visibilidade PODE variar conforme o solicitante, mas DEVE ser consistente para qualquer solicitante individual.)
+
+Obviamente, a maneira mais fácil de satisfazer esse requisito é decidir não esconder as coisas - então você não terá que se preocupar se deixar uma referência a ele ou não. No entanto, se você decidir ocultar algumas entidades, DEVE fazer isso de forma consistente.
+
+Manter dados antigos
+
+Como provedores de serviços, os parceiros EWP não estão em posição de dizer a seus clientes (IES) quanto tempo eles têm para manter seus dados. Quando uma IES decide excluir todos os dados pessoais no momento em que não são mais necessários, eles desaparecem.
+
+No entanto, o que podemos fazer é RECOMENDAR que tais entidades antigas sejam mantidas online por pelo menos algum tempo antes de desaparecerem, para que todos os outros parceiros possam perceber o que está acontecendo.
+
+Exemplo:
+
+    Se uma mobilidade X for cancelada na IES de envio e a IES de recebimento estiver solicitando uma atualização no X, então é RECOMENDADO responder com uma resposta de mobilidade X válida com o status cancelado, em vez de retornar HTTP 400 com o mensagem "X não existe".
+
+    É claro que essas mobilidades canceladas podem ser removidas posteriormente, mas NÃO DEVEM ser removidas imediatamente após serem canceladas. A mesma recomendação se aplica a todas as outras entidades.
+
+Regras de compatibilidade com versões anteriores
+
+Este capítulo descreve regras básicas de compatibilidade com versões anteriores, que são seguidas pela maioria das APIs EWP (não é um requisito estrito para todas as novas APIs, apenas uma recomendação). Eles são importantes durante todos os estágios: o design da API, o desenvolvimento do servidor e o desenvolvimento do cliente.
+
+    Adicionar um novo elemento opcional a um arquivo XML é compatível com versões anteriores. Os implementadores do cliente DEVEM ignorar elementos desconhecidos. Se um elemento não existia na versão 1.0.0, mas você deseja que ele exista na próxima versão, você pode marcar a próxima versão como 1.1.0.
+
+    Adicionar um novo elemento obrigatório a um arquivo XML NÃO é compatível com versões anteriores. Todos os hosts que implementam esta API precisarão ser atualizados, e os designers DEVEM aumentar a versão da API para 2.0.0 (a menos, talvez, se a API estiver sendo implementada por um único host, por exemplo, a API do Registro).
+
+    Alterar um elemento existente geralmente NÃO é compatível com versões anteriores. Por exemplo, se o elemento continha um inteiro na versão 1.0.0, mas os designers da API desejam que ele contenha um float de agora em diante, eles DEVEM aumentar o número da versão para 2.0.0.
+
+    Adicionar um parâmetro opcional à interface do método API é compatível com versões anteriores, desde que o valor padrão para o elemento recém-adicionado não altere a saída do método que os clientes mais antigos esperam receber.
+
+    É importante notar que os servidores PODEM servir várias versões principais de uma única API ao mesmo tempo. O lançamento de uma nova versão principal faz com que o namespace XML da API seja alterado, portanto, isso não causará nenhum conflito.
+
+Mudanças na transmissão (APIs "CNR")
+
+E se o EWP Host X quisesse notificar outros EWP Hosts (como Y) quando algo for alterado (inserido, atualizado ou excluído), em vez de exigir que Y pergunte periodicamente?
+
+No EWP, criamos um conceito chamado APIs do Receptor de Notificação de Mudança (CNR). Essas APIs são simplesmente uma aplicação do padrão publicar-assinar, que também se ajusta bem à nossa arquitetura e terminologia.
+Parte do cliente (recebimento de notificações)
+
+Se EWP Host Y deseja receber notificações de outros hosts, isso indica ao implementar uma API CNR escolhida (dependendo do tipo de entidade que eles gostariam de assistir) e publicando esse fato em seu arquivo de manifesto. Existem algumas classes de tais notificações - implementar uma API CNR específica é como "inscrever-se" para receber classes específicas de notificações.
+
+Em outras palavras, as APIs CNR são simplesmente URLs de retorno de chamada para notificações push.
+
+No entanto, é importante notar que o X não será necessariamente necessário para realmente enviar as notificações (mesmo se todos os outros hosts EWP estiverem prontos para recebê-las). Os implementadores de servidor PODEM escolher implementar apenas um subconjunto de notificações push, ou até mesmo não implementá-las (obrigando o outro lado a extrair os dados periodicamente). A possibilidade de falhas de rede e erros de programação também são questões válidas a serem esperadas.
+
+Isso significa que - como cliente - você NÃO DEVE realmente confiar que a implementação de APIs CNR é suficiente para manter sua cópia dos dados atualizada.
+Você DEVE:
+
+    Evite armazenar os dados permanentemente (ou seja, evite mantê-los no banco de dados). Em vez disso, você pode querer armazená-lo em cache e limpá-lo depois de algum tempo ou após receber uma notificação CNR. Isso força seu aplicativo a buscar novamente os dados atualizados sempre que for realmente necessário.
+
+    Se você preferir manter os dados no banco de dados, poderá manter uma data de "última confirmação" junto com eles. Assim que a data ficar velha, você pode executar um trabalhador em segundo plano para atualizar os dados desatualizados. Recomenda-se fazer isso durante as horas noturnas do servidor e usar os recursos de otimização, como os parâmetros modify_since (se houver).
+
+    Independentemente de qual dos dois métodos acima você escolher, também é recomendável permitir que seus usuários finais atualizem uma entidade manualmente. Basta colocar um botão "atualizar agora" na interface do usuário. Isso tornará o trabalho dos seus usuários muito mais fácil quando eles estiverem conversando ao vivo pelo telefone
+
+App de envio de notificações Daemon
+
+- (App de envio de notificações) nova notificação na "queue"(class="X foi atualizado", recipiente="R") -> O "R" é abordado por uma API CNR "X" apropriada(verifica a Registry)? 
+não-> remove da fila.
+sim-> (App ouvinte de notificações) chama API CNR "X" --> (App de envio de notificações) Respondeu com HTTP 200? 
+Sim-> Entregue. Remove da fila.
+Não-> Mais do que o nº máximo de horas? Sim -> Falha permanente.Removido da fila. Notifica os admnistradores.
+Não-> Adiamento por N minutos (N vai incrementando). --> verifica a registry de novo.
+
+Notificação de mudanças em vez das mudanças em si?
+As APIs CNR notificam 
+Na maioria das APIs EWP é usado o modelo de comunicação master/slave:
+	
+	- Master serve as suas entidades tal como elas são via o get do endpoint da API de Mobilidades de saída. O servidor mestre está certo que os dados estão sempre atualizados.
+	- O escravo, se este quiser mudar
+
+O que constitui uma "solicitação de CNR incorreta"?
+
+Depois que um servidor CNR API recebe uma solicitação de cliente HTTP com uma notificação de alteração, ele pode responder de duas maneiras:
+
+    HTTP 200 - significa que recebeu a solicitação corretamente e compreendeu seu significado. O cliente NÃO DEVE repetir este pedido.
+
+    HTTP 4xx - se houver algo errado com a solicitação. Por exemplo, o cliente não está autenticado, ou não autorizado, ou a solicitação está em um formato inválido. O cliente NÃO DEVE repetir este pedido (porque o servidor sempre o tratará como um pedido incorreto).
+
+    HTTP 5xx - se houve um problema no lado do servidor e a solicitação não foi recebida corretamente. O cliente DEVE repetir este pedido (porque o problema é temporário e o servidor poderá eventualmente processá-lo).
+
+Para que o contrato servidor / cliente funcione sem problemas, devemos definir explicitamente o que exatamente constitui uma solicitação incorreta. Quando o servidor PODE responder com a resposta HTTP 4xx, e quando DEVE responder com o HTTP 200?
+
+    O envio de um ID de entidade desconhecido ou inexistente NÃO é uma solicitação incorreta. Como já sabemos, isso pode significar que uma nova entidade foi criada ou excluída. Em particular, também é possível que ele tenha sido criado e excluído - ambos em questão de milissegundos. O receptor DEVE tratar isso como uma notificação de mudança válida (e responder com uma resposta HTTP 200).
+
+    Enviar o ID de uma "entidade inválida" também NÃO é um pedido incorreto. APIs CNR DEVEM responder com HTTP 200 sempre que a notificação de alteração for "recebida e compreendida". Atualizar os dados não faz parte deste "recebimento e compreensão", e a incapacidade de realmente atualizar as informações NÃO constitui uma solicitação de CNR incorreta (mesmo quando essa incapacidade é causada pela mesma equipe de programadores que lhe enviam a notificação).
+
+    Exemplo:
+
+    Digamos que HEI X tenha um endpoint de API get IIAs inválido, que sempre responde com dados corrompidos (por exemplo, namespace XML inválido). Quando os IIAs são alterados, X envia uma notificação de alteração e essa notificação é "recebida e compreendida" por Y, mas Y não consegue buscar os dados novos, porque o endpoint get de X responde com dados inválidos.
+
+    Obviamente, essa sincronização foi interrompida, e a HEI X é a culpada por isso. No entanto, X ainda está enviando uma notificação de alteração totalmente válida. O ponto de extremidade get quebrado não impede isso, pois é uma parte separada do sistema. Esta especificação CNR afirma que ainda é NECESSÁRIO que o receptor Y responda com HTTP 200 para tais solicitações. (Y pode mais tarde enviar um e-mail para X e notificá-los sobre o erro, mas Y NÃO DEVE responder com HTTP 4xx para essas solicitações.)
+Existem duas abordagens básicas para implementar APIs CNR:
+
+    Fila: depois de receber uma notificação de alteração, você responde com HTTP 200 e adiciona os identificadores recebidos a uma fila. Mais tarde, em segundo plano, você tentará atualizar suas informações armazenadas localmente nas entidades recebidas (por exemplo, chamando os pontos de extremidade get das APIs que descrevem essa entidade).
+
+    Cache: depois de receber uma notificação de alteração, você responde com HTTP 200 e limpa os valores atuais para as entidades recebidas de seu cache. Isso forçará outras partes do seu sistema a buscar dados novos nesta entidade na próxima vez que for necessário.
+
+Segurança e autenticação:
+Aspetos de Segurança
+ 
+-autenticação de cliente
+-autenticação servidor
+- pedido encriptação 
+- resposta a encriptação
+
+Alcance do documento:
+
+- Cada API decide as suas proprias opções de segurança de forma independente
+
+
+chapt 4
+Processo de mobilidade EWP explicado:
+-Student mobility business process é modelado dentro da rede do EWP.
+
+Aceder informação das Instituições
+- Institutions API - informação sobre o HEI(a morada, pessoas de contacto, imagem do logotipo, lista de unidades organizacionais). Feature - providencia um link para a versao atual de uma folha factual de PDF- um cartão de negócio .
+- Unidades API de Organização -  providencia tipos de informação semelhantes às das APIs de instituições, mas ao nível do departamento/faculdade.
+
+
+Lidar com Acordos Interinstitucionais
+- representante A cria novo acordo -> contacta o representante B diretamente e concordam nos conteudos do acordo -> ambos inserem o conteúdo do IIA nos seus sistemas informaticos -> ambos encontram o duplicado remoto dos proprios IIA e liga-os. Depois, estes são comparados -> O representante HEI A encontra um erro na cópia do AII do rep B -> o representante HEI A contacta o rep HEI B diretamente e ambos começam a resolver o conflito -> o acordo é assinado oficialmente.
+
+Exemplo do uso da API CNR do AII:
+- atualiza o AII local (lado rep HEI A) -> app apercebe-se que o endpoint "get" local vai mudar, portanto quem está a ouvir deve ser notificado ->  põe na fila de notificações dos enviados(HEI A APP) -> (HEI B App) CNR da API do AII -> vai buscar conteudo novo do AII - Refresh iniciado pelo utilizador -> compara com o estado local e verifica se existem inconsistências sérias -> rep HEI B é notificado 
+
+Lidar com nomeações
+-(coordenador dos envios) recebe a lista dos alunos nomeados -> (app envio) entidades de mobilidade -> campos publicos alterados -> (app recetora) CNR da API da mobilidade de saída -> pede os dados frescos -> (app envio) API das mobilidades de saida (lista de IDs responde com XML) -> (app recetora) analisa os dados e guarda-os numa copia local -> verifica se existem novas nomeações ou mudanças importantes -> vê se é preciso serem validados manualmente 
+
+se sim: -> coordenador recetor é notificado -> quer avaliar ou aceitar novos estudantes nomeados ->(app recetora) pode servir como proxy ou manter copias de objetos remotos -> (app envio) API de mobilidades de saída 
+
+se não: -> (diretoamente) (app envio) API de Update remoto da mobilidade de saída aceita nomeações -> ( coordenador de envio) é notificado.
+
+Preparar acordos de aprendizagem
+Editar um Acordo de Aprendizagem (LA):
+- (web app envio) nomeação foi verificada -> estudante é notificado que ele pode preencher o acordo de aprendizagem -> (estudante enviado) quer adicionar cursos no seu acordo de aprendizagem -> (web app envio) acordo de aprendizagem pode ser editado, dependendo das APIs relacionadas com o curso implementadas -> API dos cursos implentada? 
+
+-> (não)(estudante a ser enviado) permite ao aluno preencher o seu acordo apenas com os nomes de curso preliminares.Será autorizado mais tarde a preencher os detalhes.
+
+-> (sim) API de replicação simples de cursos implementada? -(sim)> web app de envio tenta usar API replicação de curso simples para providenciar ao aluno um motor de busca rico -> (web app recetiva) API de replicação de cursos: copia o catálogo completo de cursos.
+-> (web app envio) cursos são guardados no acordo de aprendizagem -notifica> (web app recetora) API CNR de mobilidade de saída.
+
+Aprovar Acordos de Aprendizagem:
+
+(Estudante) quer que outros atores aprovem o conteudo atual do acordo de aprendizagem -> (web app de envio) aprovação do aluno adicionada ao rascunho instantaneo mais recente -> fila das notificações enviadas
+
+-> (app recetora) API CNR de mobilidade de saída -> coordenador recetor pode ser notificado sobre a nova versão do acordo que está a ser aprovada pelo estudante(ou o estudante pode esperar pela aprovação do coordenador de envio).
+
+->(coordenador de envio) é notificado sobre o novo acordo de aprendizagem pronto para ser aprovado -> entra na web app local e avalia as escolhas do estudante -> acordo está ok?
+
+-(não)> (app web envio) estudante é notificado
+-(sim)> (app web envio)aprovação do coordenador de envio adicionada ao rascunho mais recente -> fila de envio de notificações -> (app web recetora) API receção de notificações de mobilidade de saída -> (coordenador de receção) é notificado que outros estão à espera de receber a sua aproavação -> entra na sua web app pessoal e confirma se o acordo está bem -> (web app receção) pode servir como proxy (simples) ou pode guardar cópias de objetos remotos -> (web app de envio) update à API de mobilidades de saída (deixa a instituição de receção editar as aprovações no rascunho) -> foi aprovado?
+
+-não> (coordenador de envio) é notificado -> (estudante) é notificado.
+-sim> ja se têm todas as aprovações ->(coordenador de envio) é notificado->(estudante) é notificado -> (web app receção) API CNR de mobilidade de saída -> coordenador recetor é notificado.
+
+Aprovar Acordos de Aprendizagem:
+
+-(coordenador recetor) é necessário fazer update ao seu SIS quando os estudantes chegarem ou partirem -> (app web recetora) objeto de mobilidade de entrada é mudado. notificar todos os ouvintes -> (app web envio) API CNR de mobilidade de entrada -> precisa de ir buscar os valores atuais -> (API de mobilidades de entrada) serve as datas reais de chegada e de partida -> (app web de envio) verifica se as datas mudaram -> faz update da base de dados,notifica o utilizador.
+
+Troca de transcrito de registos depois da mobilidade:
+
+- (coordenador recetor) decide manualmente quando as ToRs estão prontas -> (app web recetora) fazer os ToR visível via API de mobilidade de ToRs e notifica os ouvintes -> (app web de envio) API CNR de ToRs de mobilidade de chegada -> pedido de importe de ToR -> API ToRs de mobilidade de chegada -> verifica o que mudou. pede ao aluno ou ao coordenador uma avaliação -> (estudante) parece finalizado? 
+
+-ainda não> espera que o HEI de receção preencha o que falta
+-sim> (app web envio) estudante marcado como pronto para reconhecimento -> (coordenador envio) é notificado e o processo começa.
+
+
+
+
+TPC - ler capitulo 2 na integra e estruturar um resumo o que é necessário para estabelecer ligação com a outra universidade. ver registry service
+
+
+
+
+
+
+
+
+
+
+
+
+
+

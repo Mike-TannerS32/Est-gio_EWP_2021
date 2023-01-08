@@ -1,0 +1,36 @@
+Objetivos Erasmus without Paper:
+entender o projeto Erasmus without paper
+ler documentação da API saber o que é o projeto e os pontos da API 
+fazer especificação dos objetivos 
+
+reunião 11/03:
+SIIUE gere o processo do E.W.P.
+Como se gerem  os processos 
+
+
+Reunião 19/03: API discovery.
+
+
+Reunião 26/03 :
+- objetivo principal :- curto prazo capitulo 4 como se gerem os processos entre instituições?
+		 -  médio prazo: prototipo da API 
+
+Proxima reuniao:
+
+- apresentação dos pontos principais do cap 4 do EWP , API's cap 3 e pontos do cap 2
+
+26/04: discussão do capitulo 4 e, como ligar à plataforma (técnica) ,planeamento do estabelecer ligação com a outra universidade e o servidor.
+
+prox reuniao 30/04 15:30 - Discussão do conteudo do cap 2.1 arquiteturas e datatypes:
+ como estabelecer ligação com a rede EWP.construir o manifesto discovery para disponibilizar na rede, o endpoint por onde deve ser disponibilizado. insttituição X e criterios no manifesto
+
+reuniao 11/05: Discussão do manifesto.- Olhar para e implementar o Echo. Partilha futura das RSAs
+
+proxima reunião 19/05: Echo implementado e o manifesto. Verificar como funciona o servidor para testes e transição para produção.
+
+reunião 28/05: Manifesto discovery implementado. Integrado no SIIUE.Necessário info das instituições. 3 apis -> discovery echo e registry - xml exemplo(comportamento de cada api). 
+
+email 02/06: Informação org units e institutions api. Integrados no manifesto
+Enviados dia 04/06.
+
+reunião final 11/06: Discussão final do trabalho. Prototipo das APIs e manifesto feitos. Obj: Enviar relatorio. Entidade que gere EWP - contacto estabelecido. API instituições em implementação. Contacto: Universidade Murcia
